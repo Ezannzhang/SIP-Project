@@ -1,0 +1,63 @@
+:root{
+  --bg:#f6f9fb;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --accent:#0ea5a4; /* teal */
+  --accent-2:#06b6d4;
+  --glass: rgba(2,6,23,0.04);
+  --glass-2: rgba(2,6,23,0.02);
+  --radius:12px;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background: linear-gradient(180deg,#fbfdff 0%, #f0f6fb 100%);
+  color:#0f1724;
+  font-family:Inter, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.container{max-width:980px;margin:28px auto;padding:0 18px}
+.site-header{padding:28px 0}
+.site-header h1{margin:0;font-size:28px;letter-spacing:-0.5px;color:var(--accent)}
+.site-header .tag{margin:6px 0 0;color:var(--muted)}
+.card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:18px;box-shadow:0 8px 24px rgba(15,23,36,0.06)}
+.auth-columns{display:flex;gap:18px}
+.auth-left{flex:1;padding:14px}
+.auth-right{flex:1;padding:14px}
+.auth-left h2{margin-top:0}
+.toggle{display:flex;gap:8px;margin-top:12px}
+.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+.btn.small{padding:8px 10px;font-size:13px}
+.btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
+.btn.outline{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--muted)}
+.btn.primary:active{transform:translateY(1px)}
+.auth-form{display:flex;flex-direction:column;gap:10px}
+input,select{padding:10px;border-radius:8px;border:1px solid rgba(15,23,36,0.08);background:transparent;color:inherit}
+label{font-size:13px;color:var(--muted)}
+.muted{color:var(--muted);font-size:13px}
+.hidden{display:none}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dash-actions{display:flex;align-items:center;gap:10px}
+.points{background:linear-gradient(90deg, rgba(14,165,164,0.08), rgba(6,182,212,0.06));padding:8px 12px;border-radius:10px;color:var(--accent)}
+.dash-body{display:grid;grid-template-columns:1fr 360px;gap:16px}
+.card.light{background:linear-gradient(180deg, rgba(245,249,250,1), rgba(255,255,255,1));}
+.drop-form{display:flex;flex-direction:column;gap:10px}
+.list{list-style:none;padding:0;margin:0}
+.list li{padding:10px;border-radius:8px;background:linear-gradient(180deg, rgba(240,246,250,1), rgba(255,255,255,1));margin-bottom:8px;border:1px solid rgba(15,23,36,0.04)}
+.site-footer{text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
+
+@media (max-width:900px){
+  .auth-columns{flex-direction:column}
+  .dash-body{grid-template-columns:1fr}
+}
+
+/* modal for voucher shop */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.35);z-index:80}
+.modal-card{background:var(--card);padding:18px;border-radius:12px;max-width:560px;width:94%;box-shadow:0 12px 40px rgba(2,6,23,0.12)}
+.modal.hidden{display:none}
+.voucher-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(245,249,250,1), rgba(255,255,255,1));border:1px solid rgba(15,23,36,0.04)}
+.voucher-actions{display:flex;gap:8px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#06202a;color:white;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s}
+.toast.show{opacity:1}
