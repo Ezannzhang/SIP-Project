@@ -13,7 +13,6 @@ const loginForm = $('#login-form');
 const simulateScanBtn = $('#simulate-scan');
 const vouchersList = $('#vouchers-list');
 const leaderboardEl = $('#leaderboard');
-const redeemVoucherBtn = $('#redeem-voucher');
 const openShopBtn = $('#open-shop');
 const closeShopBtn = $('#close-shop');
 const voucherShop = $('#voucher-shop');
@@ -85,6 +84,11 @@ function endSession(){
   authView.classList.remove('hidden');
 }
 
+function updatePoints(pts){
+  $('#points-header').textContent = pts;
+  $('#points-profile').textContent = pts;
+}
+
 function showDashboard(email){
   const users = loadUsers();
   const u = users[email];
@@ -95,7 +99,7 @@ function showDashboard(email){
   $('#user-greeting').textContent = `Hi, ${name}`;
   $('#profile-name').textContent = name;
   $('#profile-email').textContent = email;
-  $('#points').textContent = u.points || 0;
+  updatePoints(u.points || 0);
   renderVouchers(u.vouchers || []);
   renderLeaderboard();
 }
@@ -181,7 +185,7 @@ function buyItem(itemId){
   u.vouchers = u.vouchers || [];
   u.vouchers.push({code, value:item.value, partner:item.title, created:Date.now(), used:false});
   saveUsers(users);
-  $('#points').textContent = u.points;
+  updatePoints(u.points);
   notify(`Bought ${item.title} — ${code}`);
   renderVouchers(u.vouchers);
   renderLeaderboard();
@@ -202,41 +206,28 @@ vouchersList.addEventListener('click', e=>{
 openShopBtn.addEventListener('click', openShop);
 closeShopBtn.addEventListener('click', closeShop);
 
-// simulate bin scan to award points (since form removed)
+// simulate bin scan to award points based on item count
 simulateScanBtn.addEventListener('click', ()=>{
   const email = localStorage.getItem(SESS_KEY);
   if(!email) return endSession();
+  const itemCount = parseInt($('#item-count').value) || 1;
+  if(itemCount < 1){
+    notify('Enter at least 1 item');
+    return;
+  }
   const users = loadUsers();
   const u = users[email];
-  // random reward between 5 and 50
-  const reward = Math.floor(Math.random() * 46) + 5;
+  // 10 points per item (consistent reward)
+  const pointsPerItem = 10;
+  const reward = itemCount * pointsPerItem;
   u.points = (u.points || 0) + reward;
   // add a recorded drop entry for history
   u.drops = u.drops || [];
-  u.drops.push({type:'Mixed', qty:1, weight:0, condition:'N/A', time:Date.now(), reward});
+  u.drops.push({type:'Mixed', qty:itemCount, weight:0, condition:'N/A', time:Date.now(), reward});
   saveUsers(users);
-  $('#points').textContent = u.points;
-  notify(`${reward} points added to your account`);
+  updatePoints(u.points);
+  notify(`${reward} points added (${itemCount} item${itemCount>1?'s':''} × 10 pts)`);
   renderVouchers(u.vouchers || []);
-  renderLeaderboard();
-});
-
-redeemVoucherBtn.addEventListener('click', ()=>{
-  const email = localStorage.getItem(SESS_KEY);
-  if(!email) return endSession();
-  const users = loadUsers();
-  const u = users[email];
-  // create a voucher if user has >=50 points
-  if((u.points||0) < 50){ notify('Need at least 50 points to create a voucher'); return }
-  u.points -= 50;
-  const code = 'VCHR-' + Math.random().toString(36).slice(2,9).toUpperCase();
-  u.vouchers = u.vouchers || [];
-  const v = {code, value:50, created:Date.now(), used:false};
-  u.vouchers.push(v);
-  saveUsers(users);
-  $('#points').textContent = u.points;
-  notify('Voucher created: ' + code);
-  renderVouchers(u.vouchers);
   renderLeaderboard();
 });
 
