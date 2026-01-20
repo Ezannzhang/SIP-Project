@@ -1,0 +1,19 @@
+{
+  "name": "ewaste-drop-sensor",
+  "version": "1.0.0",
+  "description": "E-Waste Drop with real-time sensor integration",
+  "main": "sensor-server.js",
+  "scripts": {
+    "start": "node sensor-server.js",
+    "dev": "nodemon sensor-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "serialport": "^10.4.0",
+    "@serialport/parser-readline": "^10.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

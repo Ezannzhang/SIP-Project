@@ -10,13 +10,18 @@ const dashboardView = $('#dashboard-view');
 // Forms / buttons
 const signupForm = $('#signup-form');
 const loginForm = $('#login-form');
-const simulateScanBtn = $('#simulate-scan');
+const startScanBtn = $('#start-scan');
+const stopScanBtn = $('#stop-scan');
+const scanStatusEl = $('#scan-status');
 const vouchersList = $('#vouchers-list');
 const leaderboardEl = $('#leaderboard');
 const openShopBtn = $('#open-shop');
 const closeShopBtn = $('#close-shop');
 const voucherShop = $('#voucher-shop');
 const shopList = $('#shop-list');
+
+// Scanning state
+let isScanning = false;
 
 // Auth toggles
 $('#show-signup').addEventListener('click', () => toggleAuth(true));
@@ -102,6 +107,7 @@ function showDashboard(email){
   updatePoints(u.points || 0);
   renderVouchers(u.vouchers || []);
   renderLeaderboard();
+  updateScanUI();
 }
 
 function renderVouchers(vouchers){
@@ -206,30 +212,41 @@ vouchersList.addEventListener('click', e=>{
 openShopBtn.addEventListener('click', openShop);
 closeShopBtn.addEventListener('click', closeShop);
 
-// simulate bin scan to award points based on item count
-simulateScanBtn.addEventListener('click', ()=>{
-  const email = localStorage.getItem(SESS_KEY);
-  if(!email) return endSession();
-  const itemCount = parseInt($('#item-count').value) || 1;
-  if(itemCount < 1){
-    notify('Enter at least 1 item');
+// Start scanning
+startScanBtn.addEventListener('click', () => {
+  if (!sensorWs || sensorWs.readyState !== WebSocket.OPEN) {
+    notify('Sensor not connected. Check server.');
     return;
   }
-  const users = loadUsers();
-  const u = users[email];
-  // 10 points per item (consistent reward)
-  const pointsPerItem = 10;
-  const reward = itemCount * pointsPerItem;
-  u.points = (u.points || 0) + reward;
-  // add a recorded drop entry for history
-  u.drops = u.drops || [];
-  u.drops.push({type:'Mixed', qty:itemCount, weight:0, condition:'N/A', time:Date.now(), reward});
-  saveUsers(users);
-  updatePoints(u.points);
-  notify(`${reward} points added (${itemCount} item${itemCount>1?'s':''} × 10 pts)`);
-  renderVouchers(u.vouchers || []);
-  renderLeaderboard();
+  isScanning = true;
+  updateScanUI();
+  sensorWs.send(JSON.stringify({ type: 'start_scan' }));
 });
+
+// Stop scanning
+stopScanBtn.addEventListener('click', () => {
+  if (!sensorWs || sensorWs.readyState !== WebSocket.OPEN) {
+    notify('Sensor not connected. Check server.');
+    return;
+  }
+  isScanning = false;
+  updateScanUI();
+  sensorWs.send(JSON.stringify({ type: 'stop_scan' }));
+});
+
+function updateScanUI() {
+  if (isScanning) {
+    startScanBtn.classList.add('hidden');
+    stopScanBtn.classList.remove('hidden');
+    scanStatusEl.textContent = '🟢 Scanning... Items will be detected automatically';
+    scanStatusEl.style.color = 'var(--accent)';
+  } else {
+    startScanBtn.classList.remove('hidden');
+    stopScanBtn.classList.add('hidden');
+    scanStatusEl.textContent = 'Press "Start scan" to listen for items entering the bin';
+    scanStatusEl.style.color = 'var(--muted)';
+  }
+}
 
 $('#logout-btn').addEventListener('click', ()=> endSession());
 
@@ -242,8 +259,84 @@ function notify(text){
   setTimeout(()=> t.style.opacity = '0', 3000);
 }
 
-// Auto-login if session present
+// WebSocket connection for sensor data
+let sensorWs = null;
+
+function initSensorConnection() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}`;
+    sensorWs = new WebSocket(wsUrl);
+
+    sensorWs.addEventListener('open', () => {
+      console.log('Connected to sensor server');
+    });
+
+    sensorWs.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleSensorMessage(data);
+      } catch (e) {
+        console.error('Sensor message parse error:', e);
+      }
+    });
+
+    sensorWs.addEventListener('close', () => {
+      console.log('Sensor connection closed. Retrying...');
+      setTimeout(initSensorConnection, 3000);
+    });
+
+    sensorWs.addEventListener('error', (err) => {
+      console.error('Sensor connection error:', err);
+    });
+  } catch (e) {
+    console.error('Failed to init sensor connection:', e);
+  }
+}
+
+function handleSensorMessage(data) {
+  if (data.type === 'item_detected') {
+    const email = localStorage.getItem(SESS_KEY);
+    if (!email) return; // User not logged in
+
+    const users = loadUsers();
+    const u = users[email];
+    if (!u) return;
+
+    const itemCount = data.count || 1;
+    const pointsPerItem = 10;
+    const reward = itemCount * pointsPerItem;
+
+    // Award points
+    u.points = (u.points || 0) + reward;
+
+    // Record the drop
+    u.drops = u.drops || [];
+    u.drops.push({
+      type: 'Mixed',
+      qty: itemCount,
+      weight: 0,
+      condition: 'N/A',
+      time: Date.now(),
+      reward,
+      source: 'sensor', // Mark as auto-detected
+    });
+
+    saveUsers(users);
+    updatePoints(u.points);
+    notify(`🎉 ${reward} points added! (${itemCount} item${itemCount > 1 ? 's' : ''} detected)`);
+    renderVouchers(u.vouchers || []);
+    renderLeaderboard();
+  } else if (data.type === 'scan_status') {
+    isScanning = data.enabled;
+    updateScanUI();
+  }
+}
+
+// Auto-login if session present and init sensor
 (function(){
   const email = localStorage.getItem(SESS_KEY);
   if(email){ try{ showDashboard(email) }catch(e){ console.error(e); endSession() } }
+  // Always try to connect to sensor server
+  initSensorConnection();
 })();

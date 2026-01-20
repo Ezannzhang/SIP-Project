@@ -69,10 +69,13 @@
             <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap">
               <div class="points">Points: <span id="points-profile">0</span></div>
               <div style="display:flex;gap:8px;align-items:center">
-                <input type="number" id="item-count" min="1" max="100" value="1" style="width:60px;padding:8px" placeholder="Items" />
-                <button id="simulate-scan" class="btn small primary">Scan bin (simulate)</button>
+                <button id="start-scan" class="btn small primary">📡 Start scan</button>
+                <button id="stop-scan" class="btn small outline hidden">⏹ Stop scan</button>
               </div>
               <button id="open-shop" class="btn outline small">Voucher shop</button>
+            </div>
+            <div style="margin-top:12px">
+              <p id="scan-status" class="muted">Press "Start scan" to listen for items entering the bin</p>
             </div>
 
             <div style="margin-top:12px">
